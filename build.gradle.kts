@@ -1,11 +1,10 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ConfigureShadowRelocation
-import groovy.util.Node
 import org.hypertrace.gradle.publishing.License.AGPL_V3
 
 plugins {
   `java-gradle-plugin`
   id("org.hypertrace.ci-utils-plugin") version "0.1.0"
-  id("org.hypertrace.publish-plugin") version "0.1.0"
+  id("org.hypertrace.publish-plugin") version "0.1.3"
   id("org.hypertrace.repository-plugin") version "0.1.0"
   id("com.github.johnrengelman.shadow") version "6.0.0"
 }
@@ -35,13 +34,21 @@ repositories {
   jcenter()
 }
 
+val bundled by configurations.creating {
+  setTransitive(false);
+}
+
+configurations.implementation {
+  extendsFrom(bundled)
+}
+
 dependencies {
   shadow(gradleApi())
-  implementation("com.commercehub.gradle.plugin:gradle-avro-plugin:0.19.0")
+  shadow("com.commercehub.gradle.plugin:gradle-avro-plugin:0.19.1")
   // avro - compiler, tools
-  implementation("org.apache.avro:avro-compiler:1.9.0")
+  shadow("org.apache.avro:avro-compiler:1.9.2")
   // for compatibility checker library
-  implementation("io.confluent:kafka-schema-registry-client:5.4.2")
+  bundled("io.confluent:kafka-schema-registry-client:5.5.0")
 
   constraints {
     implementation("com.google.guava:guava:24.1.1-jre") {
@@ -50,6 +57,15 @@ dependencies {
 
     implementation("org.yaml:snakeyaml:1.26") {
       because("Vulnerability in schema registry client, fixed in upcoming 6.0: https://snyk.io/vuln/SNYK-JAVA-ORGYAML-537645")
+    }
+
+    implementation("org.hibernate.validator:hibernate-validator:6.0.19.Final") {
+      because("  ✗ Cross-site Scripting (XSS) [Medium Severity][https://snyk.io/vuln/SNYK-JAVA-ORGHIBERNATEVALIDATOR-541187] in org.hibernate.validator:hibernate-validator@6.0.17.Final\n" +
+          "    introduced by io.confluent:kafka-schema-registry-client@5.5.0 > org.glassfish.jersey.ext:jersey-bean-validation@2.30 > org.hibernate.validator:hibernate-validator@6.0.17.Final\n" +
+          "  This issue was fixed in versions: 6.0.18.Final, 6.1.0.Final\n" +
+          "  ✗ Improper Input Validation [Medium Severity][https://snyk.io/vuln/SNYK-JAVA-ORGHIBERNATEVALIDATOR-568163] in org.hibernate.validator:hibernate-validator@6.0.17.Final\n" +
+          "    introduced by io.confluent:kafka-schema-registry-client@5.5.0 > org.glassfish.jersey.ext:jersey-bean-validation@2.30 > org.hibernate.validator:hibernate-validator@6.0.17.Final\n" +
+          "  This issue was fixed in versions: 6.0.19.Final, 6.1.3.Final")
     }
   }
 }
@@ -62,10 +78,12 @@ val relocationTask = tasks.register<ConfigureShadowRelocation>("relocatePackages
   target = tasks.shadowJar.get()
   prefix = "org.hypertrace.shaded"
 }
+
 tasks.shadowJar {
   dependsOn(relocationTask)
   minimize()
   archiveClassifier.set("")
+  configurations = listOf(bundled)
 }
 tasks.assemble {
   dependsOn(tasks.shadowJar)
@@ -73,21 +91,12 @@ tasks.assemble {
 
 publishing {
   publications {
-    afterEvaluate {
-      named<MavenPublication>("pluginMaven") {
-        // We need to remove the old publication and replace it with the far jar (and update the
-        // pom to reflect the new dependencies)
-        setArtifacts(emptySet<Artifact>())
-        pom {
-          withXml {
-            // Remove all of the dependencies as they don't apply to shadow. I'm sorry, the APIs are terrible.
-            (asNode().get("dependencies") as groovy.util.NodeList?)?.forEach { dependencyNode ->
-              asNode().remove(dependencyNode as Node?)
-            }
-          }
-        }
-        shadow.component(this)
-      }
+    register<MavenPublication>("fatPluginMaven") {
+      shadow.component(this)
     }
   }
+}
+
+tasks.whenObjectAdded {
+  enabled = !name.startsWith("publishPluginMavenPublication")
 }
