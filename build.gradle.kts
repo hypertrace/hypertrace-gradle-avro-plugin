@@ -32,6 +32,7 @@ hypertracePublish {
 repositories {
   maven("http://packages.confluent.io/maven")
   jcenter()
+
 }
 
 val bundled by configurations.creating {
@@ -48,7 +49,7 @@ dependencies {
   // avro - compiler, tools
   shadow("org.apache.avro:avro-compiler:1.9.2")
   // for compatibility checker library
-  bundled("io.confluent:kafka-schema-registry-client:5.5.0")
+  bundled("io.confluent:kafka-schema-registry-client:5.4.2")
 
   constraints {
     implementation("com.google.guava:guava:24.1.1-jre") {
@@ -57,15 +58,6 @@ dependencies {
 
     implementation("org.yaml:snakeyaml:1.26") {
       because("Vulnerability in schema registry client, fixed in upcoming 6.0: https://snyk.io/vuln/SNYK-JAVA-ORGYAML-537645")
-    }
-
-    implementation("org.hibernate.validator:hibernate-validator:6.0.19.Final") {
-      because("  ✗ Cross-site Scripting (XSS) [Medium Severity][https://snyk.io/vuln/SNYK-JAVA-ORGHIBERNATEVALIDATOR-541187] in org.hibernate.validator:hibernate-validator@6.0.17.Final\n" +
-          "    introduced by io.confluent:kafka-schema-registry-client@5.5.0 > org.glassfish.jersey.ext:jersey-bean-validation@2.30 > org.hibernate.validator:hibernate-validator@6.0.17.Final\n" +
-          "  This issue was fixed in versions: 6.0.18.Final, 6.1.0.Final\n" +
-          "  ✗ Improper Input Validation [Medium Severity][https://snyk.io/vuln/SNYK-JAVA-ORGHIBERNATEVALIDATOR-568163] in org.hibernate.validator:hibernate-validator@6.0.17.Final\n" +
-          "    introduced by io.confluent:kafka-schema-registry-client@5.5.0 > org.glassfish.jersey.ext:jersey-bean-validation@2.30 > org.hibernate.validator:hibernate-validator@6.0.17.Final\n" +
-          "  This issue was fixed in versions: 6.0.19.Final, 6.1.3.Final")
     }
   }
 }
