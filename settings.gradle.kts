@@ -7,7 +7,7 @@ pluginManagement {
 }
 
 plugins {
-  id("org.hypertrace.version-settings") version "0.1.0"
+  id("org.hypertrace.version-settings") version "0.1.1"
 }
 
 rootProject.name = "hypertrace-gradle-avro-plugin"
