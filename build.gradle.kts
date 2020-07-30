@@ -1,11 +1,11 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ConfigureShadowRelocation
-import org.hypertrace.gradle.publishing.License.AGPL_V3
+import org.hypertrace.gradle.publishing.License.APACHE_2_0
 
 plugins {
   `java-gradle-plugin`
-  id("org.hypertrace.ci-utils-plugin") version "0.1.0"
-  id("org.hypertrace.publish-plugin") version "0.1.3"
-  id("org.hypertrace.repository-plugin") version "0.1.0"
+  id("org.hypertrace.ci-utils-plugin") version "0.1.1"
+  id("org.hypertrace.publish-plugin") version "0.3.0"
+  id("org.hypertrace.repository-plugin") version "0.2.0"
   id("com.github.johnrengelman.shadow") version "6.0.0"
 }
 
@@ -26,12 +26,13 @@ gradlePlugin {
 }
 
 hypertracePublish {
-  license.set(AGPL_V3)
+  license.set(APACHE_2_0)
 }
 
 repositories {
   maven("http://packages.confluent.io/maven")
   jcenter()
+
 }
 
 val bundled by configurations.creating {
@@ -48,7 +49,7 @@ dependencies {
   // avro - compiler, tools
   shadow("org.apache.avro:avro-compiler:1.9.2")
   // for compatibility checker library
-  bundled("io.confluent:kafka-schema-registry-client:5.5.0")
+  bundled("io.confluent:kafka-schema-registry-client:5.4.2")
 
   constraints {
     implementation("com.google.guava:guava:24.1.1-jre") {
@@ -57,15 +58,6 @@ dependencies {
 
     implementation("org.yaml:snakeyaml:1.26") {
       because("Vulnerability in schema registry client, fixed in upcoming 6.0: https://snyk.io/vuln/SNYK-JAVA-ORGYAML-537645")
-    }
-
-    implementation("org.hibernate.validator:hibernate-validator:6.0.19.Final") {
-      because("  ✗ Cross-site Scripting (XSS) [Medium Severity][https://snyk.io/vuln/SNYK-JAVA-ORGHIBERNATEVALIDATOR-541187] in org.hibernate.validator:hibernate-validator@6.0.17.Final\n" +
-          "    introduced by io.confluent:kafka-schema-registry-client@5.5.0 > org.glassfish.jersey.ext:jersey-bean-validation@2.30 > org.hibernate.validator:hibernate-validator@6.0.17.Final\n" +
-          "  This issue was fixed in versions: 6.0.18.Final, 6.1.0.Final\n" +
-          "  ✗ Improper Input Validation [Medium Severity][https://snyk.io/vuln/SNYK-JAVA-ORGHIBERNATEVALIDATOR-568163] in org.hibernate.validator:hibernate-validator@6.0.17.Final\n" +
-          "    introduced by io.confluent:kafka-schema-registry-client@5.5.0 > org.glassfish.jersey.ext:jersey-bean-validation@2.30 > org.hibernate.validator:hibernate-validator@6.0.17.Final\n" +
-          "  This issue was fixed in versions: 6.0.19.Final, 6.1.3.Final")
     }
   }
 }
