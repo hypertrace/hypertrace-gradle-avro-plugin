@@ -1,5 +1,6 @@
 package org.hypertrace.gradle.avro;
 
+import java.io.File;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nonnull;
 import org.gradle.api.Plugin;
@@ -10,6 +11,7 @@ import org.gradle.api.plugins.BasePlugin;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.SourceSetContainer;
+import org.gradle.api.tasks.TaskProvider;
 import org.gradle.language.base.plugins.LifecycleBasePlugin;
 
 public class AvroPlugin implements Plugin<Project> {
@@ -21,7 +23,7 @@ public class AvroPlugin implements Plugin<Project> {
   public void apply(@Nonnull Project project) {
     project.getPlugins().apply(BasePlugin.class);
     project.getPlugins().apply(com.commercehub.gradle.plugin.avro.AvroPlugin.class);
-    var extension =
+    AvroPluginExtension extension =
         project.getExtensions().create(EXTENSION_NAME, AvroPluginExtension.class, project);
 
     this.addIdlAsResources(project, extension);
@@ -38,20 +40,20 @@ public class AvroPlugin implements Plugin<Project> {
   }
 
   private void addCheckCompatibilityTask(Project project, AvroPluginExtension extension) {
-    var compatibilityTask =
+    TaskProvider<?> compatibilityTask =
         project
             .getTasks()
             .register(
                 COMPATIBILITY_CHECK_TASK_NAME,
                 CheckAvroCompatibility.class,
                 task -> {
-                  var previousArtifactConfig =
+                  Configuration previousArtifactConfig =
                       this.createPreviousArtifactDependency(project, extension);
                   if (previousArtifactConfig.getDependencies().size() > 0) {
                     task.againstFiles(getAvdlProviderForConfig(project, previousArtifactConfig));
                   }
 
-                  var relocatedArtifactConfig =
+                  Configuration relocatedArtifactConfig =
                       this.createRelocatedArtifactDependency(project, extension);
                   if (relocatedArtifactConfig.getDependencies().size() > 0) {
                     task.source(getAvdlProviderForConfig(project, relocatedArtifactConfig));
@@ -68,7 +70,7 @@ public class AvroPlugin implements Plugin<Project> {
 
   private Configuration createPreviousArtifactDependency(
       Project project, AvroPluginExtension extension) {
-    var config =
+    Configuration config =
         this.buildNewDetachedConfiguration(project)
             .resolutionStrategy(
                 resolutionStrategy ->
@@ -85,7 +87,7 @@ public class AvroPlugin implements Plugin<Project> {
 
   private Configuration createRelocatedArtifactDependency(
       Project project, AvroPluginExtension extension) {
-    var config = this.buildNewDetachedConfiguration(project);
+    Configuration config = this.buildNewDetachedConfiguration(project);
 
     if (extension.relocatedToArtifact.isPresent()) {
       config
@@ -100,7 +102,7 @@ public class AvroPlugin implements Plugin<Project> {
       Project project, Configuration configuration) {
     return project.provider(
         () -> {
-          var file = configuration.getSingleFile();
+          File file = configuration.getSingleFile();
           project.getLogger().info("Using {}", file);
           return project
               .zipTree(configuration.getSingleFile())
@@ -114,7 +116,7 @@ public class AvroPlugin implements Plugin<Project> {
     // since we're detaching the config anyway. This could break for a single project build
     // TODO: look for better way
 
-    var config = project.getRootProject().getConfigurations().detachedConfiguration();
+    Configuration config = project.getRootProject().getConfigurations().detachedConfiguration();
     config.setTransitive(false);
     return config;
   }
