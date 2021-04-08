@@ -22,7 +22,7 @@ public class AvroPlugin implements Plugin<Project> {
   @Override
   public void apply(@Nonnull Project project) {
     project.getPlugins().apply(BasePlugin.class);
-    project.getPlugins().apply(com.commercehub.gradle.plugin.avro.AvroPlugin.class);
+    project.getPlugins().apply(com.github.davidmc24.gradle.plugin.avro.AvroPlugin.class);
     AvroPluginExtension extension =
         project.getExtensions().create(EXTENSION_NAME, AvroPluginExtension.class, project);
 

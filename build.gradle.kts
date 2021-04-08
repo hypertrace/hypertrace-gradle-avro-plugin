@@ -1,5 +1,5 @@
-import com.github.jengelman.gradle.plugins.shadow.tasks.ConfigureShadowRelocation
 import org.hypertrace.gradle.publishing.License.APACHE_2_0
+
 plugins {
   `java-gradle-plugin`
   id("org.hypertrace.ci-utils-plugin") version "0.3.0"
@@ -28,11 +28,6 @@ hypertracePublish {
   license.set(APACHE_2_0)
 }
 
-repositories {
-  maven("http://packages.confluent.io/maven")
-  jcenter()
-
-}
 
 val bundled by configurations.creating {
   setTransitive(false);
@@ -44,9 +39,9 @@ configurations.implementation {
 
 dependencies {
   shadow(gradleApi())
-  shadow("com.commercehub.gradle.plugin:gradle-avro-plugin:0.19.1")
+  shadow("com.github.davidmc24.gradle.plugin:gradle-avro-plugin:1.1.0")
   // avro - compiler, tools
-  shadow("org.apache.avro:avro-compiler:1.9.2")
+  shadow("org.apache.avro:avro-compiler:1.10.2")
   // for compatibility checker library
   bundled("io.confluent:kafka-schema-registry-client:6.1.1")
 }
@@ -55,16 +50,11 @@ tasks.jar {
   enabled = false;
 }
 
-val relocationTask = tasks.register<ConfigureShadowRelocation>("relocatePackages") {
-  target = tasks.shadowJar.get()
-  prefix = "org.hypertrace.shaded"
-}
-
 tasks.shadowJar {
-  dependsOn(relocationTask)
   minimize()
   archiveClassifier.set("")
   configurations = listOf(bundled)
+  relocate("io.confluent.kafka", "org.hypertrace.shaded.io.confluent.kafka")
 }
 tasks.assemble {
   dependsOn(tasks.shadowJar)
