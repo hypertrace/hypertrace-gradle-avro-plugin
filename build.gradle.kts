@@ -5,7 +5,7 @@ plugins {
   id("org.hypertrace.ci-utils-plugin") version "0.3.0"
   id("org.hypertrace.publish-plugin") version "1.0.2"
   id("org.hypertrace.repository-plugin") version "0.4.0"
-  id("com.github.johnrengelman.shadow") version "6.1.0"
+  id("com.github.johnrengelman.shadow") version "6.0.0"
 }
 
 group = "org.hypertrace.gradle.avro"
