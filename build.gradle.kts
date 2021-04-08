@@ -1,12 +1,11 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ConfigureShadowRelocation
 import org.hypertrace.gradle.publishing.License.APACHE_2_0
-
 plugins {
   `java-gradle-plugin`
-  id("org.hypertrace.ci-utils-plugin") version "0.1.1"
-  id("org.hypertrace.publish-plugin") version "0.3.0"
-  id("org.hypertrace.repository-plugin") version "0.2.0"
-  id("com.github.johnrengelman.shadow") version "6.0.0"
+  id("org.hypertrace.ci-utils-plugin") version "0.2.0"
+  id("org.hypertrace.publish-plugin") version "1.0.2"
+  id("org.hypertrace.repository-plugin") version "0.4.0"
+  id("com.github.johnrengelman.shadow") version "6.1.0"
 }
 
 group = "org.hypertrace.gradle.avro"
