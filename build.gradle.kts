@@ -5,7 +5,7 @@ plugins {
   id("org.hypertrace.ci-utils-plugin") version "0.3.0"
   id("org.hypertrace.publish-plugin") version "1.0.2"
   id("org.hypertrace.repository-plugin") version "0.4.0"
-  id("com.github.johnrengelman.shadow") version "6.0.0"
+  id("com.github.johnrengelman.shadow") version "6.1.0"
 }
 
 group = "org.hypertrace.gradle.avro"
@@ -48,17 +48,7 @@ dependencies {
   // avro - compiler, tools
   shadow("org.apache.avro:avro-compiler:1.9.2")
   // for compatibility checker library
-  bundled("io.confluent:kafka-schema-registry-client:5.4.2")
-
-  constraints {
-    implementation("com.google.guava:guava:24.1.1-jre") {
-      because("Vulnerability in schema registry client, fixed in upcoming 6.0: https://snyk.io/vuln/SNYK-JAVA-COMGOOGLEGUAVA-32236")
-    }
-
-    implementation("org.yaml:snakeyaml:1.26") {
-      because("Vulnerability in schema registry client, fixed in upcoming 6.0: https://snyk.io/vuln/SNYK-JAVA-ORGYAML-537645")
-    }
-  }
+  bundled("io.confluent:kafka-schema-registry-client:6.1.1")
 }
 
 tasks.jar {
