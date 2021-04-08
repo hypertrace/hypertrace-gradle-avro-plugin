@@ -1,16 +1,17 @@
 package org.hypertrace.gradle.avro;
 
-import io.confluent.kafka.schemaregistry.avro.AvroCompatibilityChecker;
-import io.confluent.kafka.schemaregistry.avro.AvroCompatibilityLevel;
+import io.confluent.kafka.schemaregistry.CompatibilityChecker;
+import io.confluent.kafka.schemaregistry.avro.AvroSchema;
 import java.io.File;
-import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.inject.Inject;
-import org.apache.avro.Schema;
 import org.apache.avro.compiler.idl.Idl;
 import org.gradle.api.file.ConfigurableFileCollection;
 import org.gradle.api.file.FileCollection;
@@ -26,20 +27,23 @@ import org.gradle.language.base.plugins.LifecycleBasePlugin;
  * Verifies the compatibility of the two avro idl sets provided.
  *
  * <h4>How this works?</h4>
- * <li>Parses the input sets of avro idl files (with .avdl extension only) using avro-compiler</li>
- * <li>Fails in case of any parsing errors of idl (Ex: incorrect idl, syntax errors)</li>
- * <li>Fails when source schema is not found for at least one of the against schema.</li>
+ *
+ * <li>Parses the input sets of avro idl files (with .avdl extension only) using avro-compiler
+ * <li>Fails in case of any parsing errors of idl (Ex: incorrect idl, syntax errors)
+ * <li>Fails when source schema is not found for at least one of the against schema.
  * <li>Finally, checks for the compatibility of each base schema with its corresponding latest
- * schema with namespace and name.</li>
- * <li>Fails fast with an error on encountering the first incompatible schema.</li>
- * <h4>Assumptions</h4>
- * <li>Verifies for the full transitive compatibility of the schema</li>
+ *     schema with namespace and name.
+ * <li>Fails fast with an error on encountering the first incompatible schema.
+ *
+ *     <h4>Assumptions</h4>
+ *
+ * <li>Verifies for the full transitive compatibility of the schema
  */
 public class CheckAvroCompatibility extends SourceTask {
   private final Logger log = getProject().getLogger();
   private ConfigurableFileCollection againstFiles = this.getProject().files();
-  private final AvroCompatibilityChecker compatibilityChecker =
-      AvroCompatibilityLevel.FULL_TRANSITIVE.compatibilityChecker;
+  private final CompatibilityChecker compatibilityChecker =
+      CompatibilityChecker.FULL_TRANSITIVE_CHECKER;
 
   @InputFiles
   @SkipWhenEmpty
@@ -64,10 +68,10 @@ public class CheckAvroCompatibility extends SourceTask {
 
   @TaskAction
   protected void runCheck() {
-    Map<String, Schema> sourceSchemas = loadSchemas(getSource().getFiles());
+    Map<String, AvroSchema> sourceSchemas = loadSchemas(getSource().getFiles());
     log.info("parsed source schemas: {}", sourceSchemas.keySet());
 
-    Map<String, Schema> againstSchemas = loadSchemas(againstFiles.getAsFileTree().getFiles());
+    Map<String, AvroSchema> againstSchemas = loadSchemas(againstFiles.getAsFileTree().getFiles());
     log.info("parsed against schemas: {}", againstSchemas.keySet());
 
     Set<String> againstSchemaSet = new HashSet<>(againstSchemas.keySet());
@@ -87,45 +91,44 @@ public class CheckAvroCompatibility extends SourceTask {
     sourceSchemas.entrySet().stream()
         .forEach(
             entry -> {
-              Schema sourceSchema = sourceSchemas.get(entry.getKey());
-              Schema againstSchema = againstSchemas.get(entry.getKey());
+              AvroSchema sourceSchema = sourceSchemas.get(entry.getKey());
+              AvroSchema againstSchema = againstSchemas.get(entry.getKey());
               if (againstSchema == null) {
                 log.info(
-                    "ignoring source schema for which corresponding against schema not available. schema name: {}.{}.",
-                    sourceSchema.getNamespace(),
-                    sourceSchema.getName());
+                    "ignoring source schema for which corresponding against schema not available. schema name: {}",
+                    sourceSchema.rawSchema().getFullName());
               } else {
-                boolean isCompatible =
-                    compatibilityChecker.isCompatible(sourceSchema, againstSchema);
+                List<String> validationErrors =
+                    compatibilityChecker.isCompatible(
+                        sourceSchema, Collections.singletonList(againstSchema));
+                boolean isCompatible = validationErrors.isEmpty();
                 log.debug(
-                    "verified compatibility for the schema: {}.{}, result: {}",
-                    againstSchema.getNamespace(),
-                    againstSchema.getName(),
+                    "verified compatibility for the schema: {}, result: {}",
+                    againstSchema.rawSchema().getFullName(),
                     isCompatible);
                 if (!isCompatible) {
                   throw new TaskExecutionException(
                       this,
                       new Exception(
                           String.format(
-                              "Schema incompatibility found for the schema: %s.%s",
-                              sourceSchema.getNamespace(), sourceSchema.getName())));
+                              "Schema incompatibility found for the schema: %s.\n%s",
+                              sourceSchema.rawSchema().getFullName(), validationErrors)));
                 }
               }
             });
   }
 
-  private Map<String, Schema> loadSchemas(Set<File> idlFiles) {
+  private Map<String, AvroSchema> loadSchemas(Set<File> idlFiles) {
     return idlFiles.stream()
-        .flatMap(file -> parseIdl(file).stream())
+        .flatMap(this::parseIdl)
         .distinct()
-        .collect(
-            Collectors.toMap(
-                schema -> schema.getNamespace() + "." + schema.getName(), Function.identity()));
+        .collect(Collectors.toMap(schema -> schema.rawSchema().getFullName(), Function.identity()));
   }
 
-  private Collection<Schema> parseIdl(File file) {
+  private Stream<AvroSchema> parseIdl(File file) {
     try (Idl idl = new Idl(file)) {
-      return idl.CompilationUnit().getTypes();
+      return idl.CompilationUnit().getTypes().stream()
+          .map(schema -> new AvroSchema(schema.toString()));
     } catch (Throwable e) {
       throw new TaskExecutionException(this, new Exception("error while parsing idl: " + file, e));
     }
