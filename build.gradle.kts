@@ -43,7 +43,7 @@ dependencies {
   // avro - compiler, tools
   shadow("org.apache.avro:avro-compiler:1.11.1")
   // for compatibility checker library
-  bundled("io.confluent:kafka-schema-registry-client:6.1.1")
+  bundled("io.confluent:kafka-schema-registry-client:6.2.6")
 }
 
 tasks.jar {
