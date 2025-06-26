@@ -1,7 +1,6 @@
 # Hypertrace Avro Plugin
 ###### org.hypertrace.avro-plugin
 
-[![CircleCI](https://circleci.com/gh/hypertrace/hypertrace-gradle-avro-plugin.svg?style=svg)](https://circleci.com/gh/hypertrace/hypertrace-gradle-avro-plugin)
 ### Purpose
 This plugin serves to transpile avro files to java and check them for compatibility. It also
 adds the IDL files as resources to the artifact.
