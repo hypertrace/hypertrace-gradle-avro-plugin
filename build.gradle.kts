@@ -2,17 +2,17 @@ import org.hypertrace.gradle.publishing.License.APACHE_2_0
 
 plugins {
   `java-gradle-plugin`
-  id("org.hypertrace.ci-utils-plugin") version "0.3.0"
-  id("org.hypertrace.publish-plugin") version "1.0.2"
-  id("org.hypertrace.repository-plugin") version "0.4.0"
-  id("com.github.johnrengelman.shadow") version "6.1.0"
+  id("org.hypertrace.ci-utils-plugin") version "0.4.0"
+  id("org.hypertrace.publish-plugin") version "1.1.1"
+  id("org.hypertrace.repository-plugin") version "0.5.0"
+  id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
 group = "org.hypertrace.gradle.avro"
 
 java {
-  targetCompatibility = JavaVersion.VERSION_1_8
-  sourceCompatibility = JavaVersion.VERSION_1_8
+  targetCompatibility = JavaVersion.VERSION_11
+  sourceCompatibility = JavaVersion.VERSION_11
 }
 
 gradlePlugin {
