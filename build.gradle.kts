@@ -28,7 +28,6 @@ hypertracePublish {
   license.set(APACHE_2_0)
 }
 
-
 val bundled by configurations.creating {
   setTransitive(false);
 }
@@ -38,7 +37,6 @@ configurations.implementation {
 }
 
 dependencies {
-  shadow(gradleApi())
   shadow("com.github.davidmc24.gradle.plugin:gradle-avro-plugin:1.3.0")
   // avro - compiler, tools
   shadow("org.apache.avro:avro-compiler:1.11.1")
